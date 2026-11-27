@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<!-- NX Title Editor. Copyright (C) 2026 ImmortalEye. SPDX-License-Identifier: GPL-3.0-or-later -->
+<html lang="en" class="sw">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NX Title Editor</title>
+<link rel="icon" href="/icon.png" sizes="256x256">
+<link rel="icon" id="favicon" type="image/svg+xml" href="">
+<link rel="stylesheet" href="/style.css">
+<script>try { const t = localStorage.getItem("nxte-theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg class="sw-logo" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 23.606 23.606">
+        <g id="Layer_1_copy" data-name="Layer 1 copy">
+          <g transform="translate(-1.369 0)">
+            <path d="M7.572 2.553 L10.772 2.553 C11.325 2.553 11.772 3.001 11.772 3.553 L11.772 20.053 C11.772 20.605 11.325 21.053 10.772 21.053 L7.572 21.053 C4.811 21.053 2.572 18.815 2.572 16.053 L2.572 7.553 C2.572 4.792 4.811 2.553 7.572 2.553 Z M7.572 4.553 C5.915 4.553 4.572 5.896 4.572 7.553 L4.572 16.053 C4.572 17.71 5.915 19.053 7.572 19.053 L9.772 19.053 L9.772 4.553 Z" fill="currentColor" fill-rule="evenodd"/>
+            <circle cx="7.172" cy="8.153" r="1.35" fill="currentColor"/>
+            <circle cx="7.172" cy="11.453" r="0.68" fill="currentColor"/>
+            <circle cx="5.772" cy="12.853" r="0.68" fill="currentColor"/>
+            <circle cx="8.572" cy="12.853" r="0.68" fill="currentColor"/>
+            <circle cx="7.172" cy="14.253" r="0.68" fill="currentColor"/>
+          </g>
+          <path d="M14.203 16.453 L14.203 7.153 A3.6 3.6 0 0 1 21.403 7.153 L21.403 16.453 L17.803 20.053 Z M14.203 8.953 L21.403 8.953" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+      </svg>
+      <h1><span class="nx">NX</span> Title Editor</h1>
+    </div>
+    <div class="head-btns">
+      <button id="settingsToggle" class="ghost-btn round-btn" title="Settings" aria-label="Settings"><span class="ico" data-icon="settings"></span></button>
+      <button id="aboutToggle" class="ghost-btn round-btn about-btn" title="About" aria-label="About">?</button>
+    </div>
+  </header>
+
+  <!-- ===== Game list ===== -->
+  <section id="listView" class="panel">
+    <div id="toolbarSentinel"></div>
+    <div class="toolbar" id="toolbar">
+      <div class="list-head">
+        <h2><span class="long">Installed games</span><span class="short">Games</span></h2>
+        <div class="seg" id="showingSeg" title="Which icon the cards show">
+          <button class="seg-btn active" data-show="home" title="Home Screen"><span class="ico" data-icon="home"></span><span class="lbl">Home Screen</span></button>
+          <button class="seg-btn" data-show="all" title="All Software"><span class="ico" data-icon="grid"></span><span class="lbl">All Software</span></button>
+        </div>
+      </div>
+      <div class="tb-row">
+        <div class="search-field" id="filterField">
+          <span class="ico search-ico" data-icon="search"></span>
+          <input id="filter" placeholder="Name or ID">
+          <button class="clear-btn hidden" id="filterClear" aria-label="Clear"><span class="ico" data-icon="x"></span></button>
+        </div>
+        <button id="refresh" class="ghost-btn icon-only" title="Rescan" aria-label="Rescan"><span class="ico" data-icon="refresh"></span></button>
+      </div>
+      <div class="tb-row">
+        <div class="kind-row" id="kindFilter">
+          <div class="seg seg-fill kind-all-seg">
+            <button class="seg-btn kind-all active" data-toggle="all" aria-pressed="true" title="All games">All</button>
+          </div>
+          <div class="seg seg-fill kind-toggle-seg">
+          <button class="seg-btn kind-btn kind-toggle" data-toggle="home" aria-pressed="false" title="Custom Home Screen icon"><span class="ico" data-icon="home"></span></button>
+          <button class="seg-btn kind-btn kind-toggle" data-toggle="apps" aria-pressed="false" title="Custom All Software icon"><span class="ico" data-icon="grid"></span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p id="summary" class="muted">Loading...</p>
+    <div id="games" class="game-grid"></div>
+  </section>
+
+  <!-- ===== Editor ===== -->
+  <div id="editorView" class="hidden">
+    <section class="panel">
+      <div class="ed-head">
+        <button id="backBtn" class="back-btn" title="All games" aria-label="Back to all games"><span class="ico" data-icon="left"></span></button>
+        <div class="ed-title">
+          <h2 class="ed-name"><span id="edName"></span><span class="name-extras"><button id="editDetails" class="pencil-btn" title="Edit details" aria-label="Edit details"><span class="ico" data-icon="pencil"></span></button><span id="detailsTag" class="name-tag hidden"></span></span></h2>
+          <div id="edTid" class="tid ed-sub"></div>
+        </div>
+        <button id="resetBtn" class="back-btn reset-btn" title="Reset to Defaults" aria-label="Reset to Defaults"><span class="ico" data-icon="trash"></span></button>
+      </div>
+      <div class="slots-row">
+        <div class="slot-col">
+          <div class="slot targeted" id="slotHome" data-target="home" title="Tap to pick art for this screen">
+            <p class="slot-label"><span class="ico" data-icon="home"></span>Home Screen</p>
+            <div class="slot-art-box"><div class="art art-home slot-art" id="artHome"></div><span class="tag hidden" id="tagHome"></span><button class="eye-btn" id="eyeHome" aria-label="View Home Screen icon large"><span class="ico" data-icon="eye"></span></button></div>
+            <div class="slot-actions">
+              <button class="icon-btn danger" id="trashHome" title="Remove Home Screen icon" aria-label="Remove Home Screen icon"><span class="ico" data-icon="trash"></span><span class="btn-lbl">Remove</span></button>
+              <button class="icon-btn" id="copyHome" title="Copy to All Software" aria-label="Copy to All Software"><span class="btn-lbl">Copy</span><span class="ico" data-icon="right"></span></button>
+            </div>
+          </div>
+        </div>
+        <div class="slot-col">
+          <div class="slot" id="slotAll" data-target="all" title="Tap to pick art for this screen">
+            <p class="slot-label"><span class="ico" data-icon="grid"></span>All Software</p>
+            <div class="slot-art-box"><div class="art art-all slot-art" id="artAll"></div><span class="tag hidden" id="tagAll"></span><button class="eye-btn" id="eyeAll" aria-label="View All Software icon large"><span class="ico" data-icon="eye"></span></button></div>
+            <div class="slot-actions">
+              <button class="icon-btn" id="copyAll" title="Copy to Home Screen" aria-label="Copy to Home Screen"><span class="ico" data-icon="left"></span><span class="btn-lbl">Copy</span></button>
+              <button class="icon-btn danger" id="trashAll" title="Remove All Software icon" aria-label="Remove All Software icon"><span class="btn-lbl">Remove</span><span class="ico" data-icon="trash"></span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p id="mismatchNote" class="hint warn hidden">These screens use different shapes. Pick separate art for the best result.</p>
+      <p id="slotError" class="status err"></p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Icon Picker</h2>
+        <div class="tabs" id="sourceTabs">
+          <button class="tab-btn active" data-tab="sgdb">SteamGridDB</button>
+          <button class="tab-btn" data-tab="upload">Upload</button>
+          <button class="tab-btn" data-tab="link">Link</button>
+        </div>
+      </div>
+
+      <div id="tab-sgdb" class="tab-content active">
+        <div id="sgdbNoKey" class="no-key hidden">
+          <p>SteamGridDB needs an API key.</p>
+          <button id="noKeySettings">Open Settings</button>
+        </div>
+        <div id="sgdbBody">
+        <div class="search-box search-field">
+          <span class="ico search-ico" data-icon="search"></span>
+          <input id="sgdbQuery" placeholder="Search SteamGridDB" autocomplete="off" spellcheck="false"
+                 role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgdbSuggest">
+          <button class="clear-btn hidden" id="sgdbClear" aria-label="Clear"><span class="ico" data-icon="x"></span></button>
+          <a id="sgdbMatchLink" class="match-link hidden" target="_blank" rel="noopener" title="View on SteamGridDB">↗</a>
+          <ul id="sgdbSuggest" class="suggest hidden" role="listbox"></ul>
+        </div>
+        <p id="sgdbMsg" class="muted small hidden"></p>
+        <div class="grid-head">
+          <p class="adding-to">Adding to <span id="addingIcon" class="ico" data-icon="home"></span><strong id="addingName">Home Screen</strong></p>
+          <label class="pick-field">Dimensions
+            <select id="styleSelect">
+              <option value="square">1:1 - Square</option>
+              <option value="galaxy">22:31 - Galaxy 2.0</option>
+              <option value="horizontal">92:43 - Steam Horizontal</option>
+              <option value="vertical">2:3 - Steam Vertical</option>
+            </select>
+          </label>
+        </div>
+        <div id="iconGrid" class="icon-grid"></div>
+        </div>
+        <p class="hint credit">Art from <a href="https://www.steamgriddb.com/" target="_blank" rel="noopener">SteamGridDB ↗</a></p>
+      </div>
+
+      <div id="tab-upload" class="tab-content">
+        <div class="search-row">
+          <input id="uploadName" class="file-name" readonly tabindex="-1" placeholder="No image chosen" aria-label="Chosen image">
+          <button id="uploadPick">Upload</button>
+          <input type="file" id="fileInput" accept="image/*" hidden>
+        </div>
+        <p class="hint">Pick an image from your device. It will be formatted here and only the finished icon is sent to the Switch.</p>
+      </div>
+
+      <div id="tab-link" class="tab-content">
+        <div class="search-row">
+          <input id="linkUrl" placeholder="https://example.com/art.png" inputmode="url">
+          <button id="linkUse">Use link</button>
+        </div>
+        <span id="linkStatus" class="status"></span>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Large view for one piece of art -->
+<div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="Large view">
+  <button id="lbClose" class="lb-close" aria-label="Close"><span class="ico" data-icon="x"></span></button>
+  <img id="lbImg" alt="">
+  <p id="lbCaption" class="lb-caption"></p>
+</div>
+
+<!-- Settings dialog -->
+<div id="aboutDlg" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+  <div class="modal about-modal">
+    <div class="modal-head">
+      <h3 id="aboutTitle">About</h3>
+      <button id="aboutClose" class="clear-btn modal-close" aria-label="Close"><span class="ico" data-icon="x"></span></button>
+    </div>
+    <p class="about-name">NX Title Editor <span id="aboutVersion" class="muted"></span></p>
+    <p>This app works by using icon sysmodules such as <a href="https://github.com/p-sam/switch-sys-tweak" target="_blank" rel="noopener">sys-tweak ↗</a> and <a href="https://github.com/masagrator/sys-ticon" target="_blank" rel="noopener">sys-ticon ↗</a> to change the icons, names, authors and version numbers of titles installed on the Switch.</p>
+    <hr class="set-divider about-divider">
+    <p>These modules look for JPG and INI files within the TitleID folders for each app in "/atmosphere/contents/" and then replace the displayed icons and game info with the contents of those folders.</p>
+    <p>This app hosts a small web server on the Switch that can be connected to from a web browser, where you can then replace the selected title's default icons with custom ones from <a href="https://www.steamgriddb.com/" target="_blank" rel="noopener">SteamGridDB ↗</a>, your local files or a URL. You can also modify the title's name, author and version number. This data is then converted into the correct format expected by icon sysmodules and sent to the Switch, where it is automatically saved in the correct folder structure.</p>
+    <p>All changes can only be seen after a reboot.</p>
+    <hr class="set-divider about-divider">
+    <h4>Credits</h4>
+    <ul class="credits">
+      <li>Made by <a href="https://github.com/ImmortalEye3115" target="_blank" rel="noopener">ImmortalEye ↗</a></li>
+      <li>Art search by <a href="https://www.steamgriddb.com/" target="_blank" rel="noopener">SteamGridDB ↗</a></li>
+      <li>Icons by <a href="https://tabler.io/icons" target="_blank" rel="noopener">Tabler Icons ↗</a> (MIT)</li>
+      <li>QR codes by <a href="https://www.nayuki.io/page/qr-code-generator-library" target="_blank" rel="noopener">Project Nayuki ↗</a> (MIT)</li>
+      <li>Built with help from <a href="https://www.anthropic.com/claude" target="_blank" rel="noopener">Claude ↗</a> by Anthropic</li>
+    </ul>
+  </div>
+</div>
+
+<div id="settingsDlg" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="modal settings-modal">
+    <div class="modal-head">
+      <h3 id="settingsTitle">Settings</h3>
+      <button id="settingsClose" class="clear-btn modal-close" aria-label="Close"><span class="ico" data-icon="x"></span></button>
+    </div>
+
+
+    <section class="set-group">
+      <h4>SteamGridDB</h4>
+      <div class="field">
+        <div class="field-head">
+          <label for="sgdbKey">API key</label>
+          <a href="https://www.steamgriddb.com/profile/preferences/api" target="_blank" rel="noopener">Get a key ↗</a>
+        </div>
+        <span class="search-field key-field">
+          <input id="sgdbKey" type="password" autocomplete="off" placeholder="Paste your key">
+          <button type="button" class="clear-btn hidden" id="sgdbKeyClear" aria-label="Clear"><span class="ico" data-icon="x"></span></button>
+        </span>
+      </div>
+      <p class="hint">The key will be saved to /config/nx-title-editor/sgdb_key.txt</p>
+    </section>
+
+    <section class="set-group">
+      <h4>Icon Dimensions</h4>
+      <div class="shape-line">
+        <span class="field-label"><span class="ico" data-icon="home"></span>Home Screen</span>
+        <div class="shape-inputs">
+          <select id="homeShapeSel">
+            <option value="1:1">1:1 - Square</option>
+            <option value="22:31">22:31 - Galaxy 2.0</option>
+            <option value="92:43">92:43 - Steam Horizontal</option>
+            <option value="2:3">2:3 - Steam Vertical</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div id="homeShapeCustom" class="shape-custom hidden">
+          <input id="homeShapeRatio" placeholder="92:43" title="Ratio" aria-label="Ratio">
+          <input id="homeShapeSize" placeholder="920x430" title="Size in pixels" aria-label="Size in pixels">
+          <input id="homeShapeDec" placeholder="2.14" title="Decimal (width ÷ height)" aria-label="Decimal" inputmode="decimal">
+        </div>
+      </div>
+      <div class="shape-line">
+        <span class="field-label"><span class="ico" data-icon="grid"></span>All Software</span>
+        <div class="shape-inputs">
+          <select id="allShapeSel">
+            <option value="1:1">1:1 - Square</option>
+            <option value="22:31">22:31 - Galaxy 2.0</option>
+            <option value="92:43">92:43 - Steam Horizontal</option>
+            <option value="2:3">2:3 - Steam Vertical</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+        <div id="allShapeCustom" class="shape-custom hidden">
+          <input id="allShapeRatio" placeholder="92:43" title="Ratio" aria-label="Ratio">
+          <input id="allShapeSize" placeholder="920x430" title="Size in pixels" aria-label="Size in pixels">
+          <input id="allShapeDec" placeholder="2.14" title="Decimal (width ÷ height)" aria-label="Decimal" inputmode="decimal">
+        </div>
+      </div>
+      <p class="hint">These only change how icons are shown in this app. Your Switch's theme decides how they actually appear on the console, so set these to match your theme. For Custom, type a ratio (92:43), a size in pixels (920x430) or a decimal (2.14); the other boxes fill in.</p>
+    </section>
+
+    <section class="set-group">
+      <h4>App Theme</h4>
+      <div class="seg seg-fill" id="themeSeg">
+        <button type="button" class="seg-btn" data-theme="auto">Auto</button>
+        <button type="button" class="seg-btn" data-theme="light">Light</button>
+        <button type="button" class="seg-btn" data-theme="dark">Dark</button>
+      </div>
+    </section>
+
+    <section class="set-group">
+      <h4>Editing</h4>
+      <label class="field">When you pick a Home Screen icon, the All Software icon should:
+        <select id="allDefault">
+          <option value="skip">Do nothing</option>
+          <option value="same">Copy the Home Screen icon</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="set-group">
+      <h4>Connection</h4>
+      <label class="field">Port
+        <input id="port" inputmode="numeric" placeholder="Automatic (8420)">
+      </label>
+      <p id="portHint" class="hint"></p>
+    </section>
+
+    <div class="row set-save">
+      <button id="saveSettings">Save settings</button>
+      <span id="settingsStatus" class="status"></span>
+    </div>
+
+    <hr class="set-divider">
+    <button class="reboot-btn set-reboot">Reboot Switch</button>
+  </div>
+</div>
+
+<!-- Shared "are you sure?" dialog (discard changes, reboot) -->
+<div id="detailsDlg" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="detailsTitle">
+  <div class="modal details-modal">
+    <div class="modal-head">
+      <h3 id="detailsTitle">Edit Details</h3>
+      <button id="detailsClose" class="clear-btn modal-close" aria-label="Close"><span class="ico" data-icon="x"></span></button>
+    </div>
+    <div class="field">
+      <div class="field-head"><label for="detName">Name</label><span id="detNameCount" class="byte-count hidden"></span></div>
+      <span class="search-field key-field">
+        <input id="detName" autocomplete="off" spellcheck="false" data-limit="512">
+        <button type="button" class="clear-btn hidden" id="detNameClear" aria-label="Clear"><span class="ico" data-icon="x"></span></button>
+      </span>
+    </div>
+    <div class="field">
+      <div class="field-head"><label for="detPublisher">Publisher</label><span id="detPublisherCount" class="byte-count hidden"></span></div>
+      <span class="search-field key-field">
+        <input id="detPublisher" autocomplete="off" spellcheck="false" data-limit="256">
+        <button type="button" class="clear-btn hidden" id="detPublisherClear" aria-label="Clear"><span class="ico" data-icon="x"></span></button>
+      </span>
+    </div>
+    <div class="field">
+      <div class="field-head"><label for="detVersion">Version</label><span id="detVersionCount" class="byte-count hidden"></span></div>
+      <span class="search-field key-field">
+        <input id="detVersion" autocomplete="off" spellcheck="false" data-limit="16">
+        <button type="button" class="clear-btn hidden" id="detVersionClear" aria-label="Clear"><span class="ico" data-icon="x"></span></button>
+      </span>
+    </div>
+    <button id="detailsDone" class="full-btn">Done</button>
+    <div id="detailsResetWrap">
+      <hr class="set-divider">
+      <button id="detailsReset" class="set-reboot">Reset to Defaults</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirmDlg" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+  <div class="modal">
+    <h3 id="confirmTitle"></h3>
+    <p id="confirmText" class="muted"></p>
+    <ul id="confirmList" class="confirm-list hidden"></ul>
+    <p id="confirmNote" class="muted hidden"></p>
+    <p id="confirmWarn" class="modal-warn hidden"></p>
+    <div class="modal-actions">
+      <button id="confirmNo" class="ghost-btn"></button>
+      <button id="confirmYes" class="danger-solid"></button>
+    </div>
+  </div>
+</div>
+
+<button id="toTop" class="to-top hidden" aria-label="Scroll to top"><span class="ico" data-icon="up"></span></button>
+
+<div id="changesBar" class="changes-bar">
+  <div class="bar-save" id="barSave">
+    <button id="sendBtn" disabled>Save</button>
+  </div>
+  <div class="changes-text" id="changesText">
+    <div id="changesCount" class="changes-count"></div>
+    <div class="changes-sub">Reboot Required</div>
+  </div>
+  <div class="changes-text" id="changesReady"><div class="changes-count ready-text">Ready</div></div>
+  <div class="changes-text hidden" id="changesSaved"><div class="changes-count saved-text">Saved</div></div>
+  <div class="changes-actions" id="changesActions">
+    <button class="danger-btn reboot-btn">Reboot Switch</button>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

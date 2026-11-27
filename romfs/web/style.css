@@ -1,0 +1,701 @@
+/* NX Title Editor
+   Copyright (C) 2026 ImmortalEye
+   SPDX-License-Identifier: GPL-3.0-or-later */
+:root{
+  --bg:#181a1f;
+  --panel:#212429;
+  --inset:#14161a;
+  --border:#31353c;
+  --text:#e7e6e2;
+  --muted:#8b8f98;
+  --dim:#555a63;
+  --accent:#e8a23d;
+  --accent-dim:#4a3a20;
+  --danger:#e2695b;
+  --ok:#7fbf7f;
+  --on-accent:#1a1500;
+  --on-danger:#1a0a08;
+  --on-ok:#0f1f0f;
+  --disabled-text:#6b6250;
+  --art-bg:#0f1114;
+  --secondary:#3a3e46;
+  --slot-bg:rgba(255,255,255,0.01);
+  --slot-target-bg:rgba(232,162,61,0.05);
+  --shadow:rgba(0,0,0,0.4);
+  color-scheme:dark;
+  --home-ar:1 / 1;
+  --all-ar:1 / 1;
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+}
+/* Light mode: chosen in App Theme, or Auto when the device says light.
+   Anything else (dark, no preference, older browsers) stays dark. */
+html[data-theme="light"]{
+  --bg:#f4f3f0;--panel:#ffffff;--inset:#efeee9;--border:#d9d7d0;--text:#1f2023;--muted:#6b6e75;--dim:#a9abb0;
+  --accent:#c27a12;--accent-dim:#f6e6cc;--danger:#c9483a;--ok:#3f8f3f;
+  --on-accent:#ffffff;--on-danger:#ffffff;--on-ok:#ffffff;--disabled-text:#a8977a;--art-bg:#e6e4de;--secondary:#e6e4de;
+  --slot-bg:transparent;--slot-target-bg:rgba(194,122,18,0.05);--shadow:rgba(0,0,0,0.12);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: light){
+  html:not([data-theme]){
+  --bg:#f4f3f0;--panel:#ffffff;--inset:#efeee9;--border:#d9d7d0;--text:#1f2023;--muted:#6b6e75;--dim:#a9abb0;
+  --accent:#c27a12;--accent-dim:#f6e6cc;--danger:#c9483a;--ok:#3f8f3f;
+  --on-accent:#ffffff;--on-danger:#ffffff;--on-ok:#ffffff;--disabled-text:#a8977a;--art-bg:#e6e4de;--secondary:#e6e4de;
+  --slot-bg:transparent;--slot-target-bg:rgba(194,122,18,0.05);--shadow:rgba(0,0,0,0.12);
+  color-scheme:light;
+  }
+}
+*{box-sizing:border-box;}
+button,img,a,label{-webkit-tap-highlight-color:transparent;}
+body{margin:0;background:var(--bg);color:var(--text);min-height:100vh;}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+.wrap{max-width:760px;margin:0 auto;padding:32px 20px 80px;}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand img{width:28px;height:28px;border-radius:6px;}
+h1{font-size:20px;letter-spacing:0.02em;margin:0;font-weight:600;}
+h2{font-size:13px;color:var(--muted);margin:0 0 14px;font-weight:600;}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:20px;margin-bottom:16px;}
+.hidden{display:none !important;}
+hr{border:none;border-top:1px solid var(--border);margin:18px 0 4px;}
+
+/* ---- text ---- */
+.muted{color:var(--muted);font-size:13px;margin:0 0 10px;}
+.small{font-size:11px;}
+.hint{color:var(--muted);font-size:11px;margin:4px 0 10px;line-height:1.5;}
+.hint.err{color:var(--danger);}
+.hint.warn{color:var(--accent);}
+.status{font-size:12px;color:var(--muted);transition:opacity .5s;}
+.status.fade{opacity:0;}
+.status.ok{color:var(--ok);}
+.status.err{color:var(--danger);}
+
+/* ---- controls ---- */
+button{
+  background:var(--accent);color:var(--on-accent);border:none;padding:9px 16px;border-radius:4px;
+  font-weight:600;cursor:pointer;font-family:inherit;font-size:13px;
+}
+button:disabled{background:var(--accent-dim);color:var(--disabled-text);cursor:not-allowed;}
+button:hover:not(:disabled){filter:brightness(1.08);}
+.ghost-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 12px;font-size:12px;font-weight:600;}
+.ghost-btn:hover{border-color:var(--accent);color:var(--accent);filter:none;}
+.ghost-btn.active{border-color:var(--accent);color:var(--accent);}
+.small-btn{padding:4px 10px;font-size:11px;}
+.danger-btn{background:transparent;border:1px solid var(--danger);color:var(--danger);}
+.reboot-btn{min-width:calc(13ch + 34px);}
+.reboot-btn:disabled{background:transparent;border-color:var(--danger);color:var(--danger);opacity:0.75;}
+input,select{
+  background:var(--inset);border:1px solid var(--border);border-radius:4px;padding:8px 10px;
+  color:var(--text);font-family:inherit;font-size:13px;min-width:0;
+}
+input:focus,select:focus{outline:none;border-color:var(--accent);}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;}
+.field{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);margin-bottom:6px;}
+.field-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+.field-label{display:flex;align-items:center;gap:6px;}
+
+/* segmented buttons (filter, target) and tabs */
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:4px;overflow:hidden;flex:none;}
+.seg-btn{
+  background:transparent;color:var(--muted);border:none;border-radius:0;padding:7px 12px;font-size:12px;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.seg-btn + .seg-btn{border-left:1px solid var(--border);}
+.seg-btn.active{background:var(--accent-dim);color:var(--accent);}
+.seg-btn:hover{filter:none;color:var(--accent);}
+.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.tab-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 14px;border-radius:4px;font-size:12px;}
+.tab-btn.active{border-color:var(--accent);color:var(--accent);}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;margin-bottom:14px;}
+.panel-head h2{margin:0;}
+.panel-head .tabs{margin:0 0 0 auto;gap:6px;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+.search-row{display:flex;gap:8px;margin-bottom:12px;}
+.search-row input{flex:1;}
+  background:transparent;border:1px solid var(--border);padding:5px 12px;border-radius:14px;
+  font-size:12px;font-weight:400;color:var(--muted);
+}
+.search-row .seg{flex:none;}
+.search-field{position:relative;display:flex;align-items:center;}
+.search-field input{width:100%;padding-left:34px;padding-right:34px;}
+.key-field input{padding-left:10px;}
+.search-field .search-ico{position:absolute;left:10px;width:16px;height:16px;color:var(--muted);pointer-events:none;}
+.clear-btn{
+  position:absolute;right:6px;width:26px;height:26px;padding:0;border-radius:50%;background:transparent;
+  display:flex;align-items:center;justify-content:center;
+}
+.clear-btn .ico{color:var(--muted);width:16px;height:16px;}
+.clear-btn:hover{background:var(--border);filter:none;}
+.clear-btn:hover .ico{color:var(--text);}
+.search-box{margin-bottom:10px;}
+.search-box input{padding-right:66px;}
+.search-box .clear-btn{right:36px;}
+.search-box .match-link{position:absolute;right:6px;top:50%;transform:translateY(-50%);padding:4px 8px;}
+#filterField{flex:1;min-width:0;}
+.suggest{
+  position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:15;margin:0;padding:4px 0;list-style:none;
+  background:var(--panel);border:1px solid var(--accent-dim);border-radius:6px;max-height:280px;overflow-y:auto;
+  box-shadow:0 8px 20px var(--shadow);
+}
+.suggest li{padding:10px 12px;font-size:13px;cursor:pointer;color:var(--text);}
+.suggest li.active,.suggest li:hover{background:var(--accent-dim);color:var(--accent);}
+.suggest li.current{color:var(--accent);}
+.suggest li.current::after{content:" ✓";}
+.suggest .suggest-empty{color:var(--muted);cursor:default;}
+.suggest .suggest-empty:hover{background:none;color:var(--muted);}
+.grid-head{display:flex;justify-content:space-between;align-items:center;gap:8px 16px;flex-wrap:wrap;margin:0 0 10px;}
+.grid-head .adding-to{margin:0;}
+.pick-field{display:flex;flex-direction:row;align-items:center;gap:8px;font-size:12px;color:var(--muted);}
+.pick-field select{padding:6px 8px;font-size:12px;}
+.match-link{font-weight:600;font-size:14px;}
+.adding-to{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin:0 0 10px;}
+.adding-to strong{color:var(--accent);font-weight:600;}
+.adding-to .ico{color:var(--accent);width:14px;height:14px;}
+
+/* icons (Tabler, inline SVG) */
+.ico{display:inline-flex;width:16px;height:16px;color:var(--dim);flex:none;}
+.ico svg{width:100%;height:100%;}
+.ico.on{color:var(--accent);}
+.seg-btn .ico,.field-label .ico,.slot-label .ico{color:inherit;width:14px;height:14px;}
+
+/* ---- game list ---- */
+.toolbar{
+  display:flex;flex-direction:column;gap:8px;margin:0 -20px 12px;padding:8px 20px;
+  position:sticky;top:0;z-index:5;background:var(--panel);
+}
+.tb-row{display:flex;gap:8px;align-items:center;}
+.seg.seg-fill{display:flex;flex:1;min-width:0;}
+.seg-fill .seg-btn{flex:1;min-width:0;justify-content:center;white-space:nowrap;}
+.toolbar.pinned{border-bottom:1px solid var(--border);box-shadow:0 6px 12px var(--shadow);}
+.toolbar .search-field input{min-width:0;}
+#refresh .ico,#showingSeg .ico{color:inherit;width:18px;height:18px;}
+/* Toolbar controls: big enough to read and tap */
+.toolbar input{height:42px;font-size:14px;}
+.toolbar .seg-btn{min-height:42px;padding:0 14px;font-size:13px;}
+.toolbar #refresh{width:42px;height:42px;padding:0;display:inline-flex;align-items:center;justify-content:center;flex:none;}
+.toolbar .search-ico{width:18px;height:18px;}
+.toolbar .search-field input{padding-left:38px;}
+/* Min card width = what the footer (pill + two indicators) needs, so columns drop before it breaks. */
+.game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(147px,1fr));gap:12px;}
+.game-grid.showing-all .art{aspect-ratio:var(--all-ar);}
+.art.art-home{aspect-ratio:var(--home-ar);}
+.art.art-all{aspect-ratio:var(--all-ar);}
+button.game{
+  background:var(--inset);border:1px solid var(--border);border-radius:6px;padding:8px;
+  display:flex;flex-direction:column;gap:4px;text-align:left;color:inherit;font-weight:400;
+}
+button.game:hover{border-color:var(--accent);filter:none;}
+
+/* Art box takes the Home screen shape; custom art stretches to fill it,
+   stock art stays square inside it. */
+.art{
+  width:100%;aspect-ratio:var(--home-ar);background:var(--art-bg);border-radius:4px;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;margin-bottom:4px;
+}
+/* Every icon is a square file the Switch stretches to the screen's shape, so draw it that way. */
+.art img{width:100%;height:100%;object-fit:fill;display:block;}
+
+.game .name{
+  font-size:12px;color:var(--text);line-height:1.35;overflow:hidden;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  height:calc(1.35em * 2);   /* always two lines tall so cards line up */
+}
+.tid,.ver{font-size:10px;color:var(--muted);letter-spacing:0.02em;}
+
+.ver{min-height:1.2em;}
+.foot{display:flex;align-items:center;gap:6px;margin-top:auto;padding-top:6px;}
+.pill{
+  flex:1;min-width:8.5em;text-align:center;font-size:10px;padding:2px 0;border-radius:9px;
+  border:1px solid var(--dim);color:var(--muted);
+}
+.pill.on{border-color:var(--accent);color:var(--accent);}
+
+/* ---- editor ---- */
+.icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px;margin-bottom:8px;}
+@media (min-width:600px){.icon-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));}}
+.icon-grid.wide-thumbs{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
+@media (min-width:600px){.icon-grid.wide-thumbs{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));}}
+.thumb{position:relative;cursor:pointer;}
+.thumb .eye-btn{opacity:0.9;}
+.icon-grid img{
+  width:100%;aspect-ratio:var(--thumb-ar,1 / 1);object-fit:contain;background:var(--inset);
+  border-radius:6px;border:2px solid transparent;cursor:pointer;display:block;
+}
+.icon-grid img:hover{border-color:var(--muted);}
+.icon-grid .thumb.picked img{border-color:var(--accent);}
+.credit{margin-top:10px;}
+.file-name{cursor:pointer;text-overflow:ellipsis;}
+.file-name:focus{outline:none;}
+
+.secondary-btn{background:var(--secondary);color:var(--text);}
+
+/* ---- editor: title + slots ---- */
+.ed-head{display:flex;align-items:flex-start;flex-wrap:wrap;gap:10px 12px;margin-bottom:16px;}
+.ed-title{flex:1 1 170px;min-width:0;}
+.back-btn{
+  --title-line:calc(clamp(20px,3.4vw,32px) * 1.15);
+  flex:none;height:max(36px, var(--title-line));min-width:max(36px, var(--title-line));padding:0 9px;border-radius:8px;
+  background:transparent;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;gap:6px;
+}
+.back-btn .ico{color:var(--muted);width:18px;height:18px;}
+.back-btn:hover{border-color:var(--accent);filter:none;}
+.back-btn:hover .ico{color:var(--accent);}
+.ed-sub{overflow-wrap:anywhere;}
+.ed-name{font-size:clamp(20px,3.4vw,32px);line-height:1.15;color:var(--text);margin:0 0 4px;font-weight:600;overflow-wrap:anywhere;}
+.text-danger-btn{
+  background:transparent;color:var(--danger);font-size:12px;font-weight:600;padding:4px 6px;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.text-danger-btn .ico{color:inherit;width:14px;height:14px;}
+.text-danger-btn:disabled{background:transparent;color:var(--dim);}
+.slots-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+.slot-col{display:flex;flex-direction:column;}
+.slot{
+  width:100%;border:1px solid var(--border);border-radius:12px;padding:12px;cursor:pointer;
+  text-align:center;background:var(--slot-bg);
+}
+.slot.targeted{border-color:var(--accent);background:var(--slot-target-bg);}
+.slot-label{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:600;margin:0 0 10px;}
+.slot-label .ico{color:inherit;width:14px;height:14px;}
+.slot-art-box{position:relative;height:220px;display:flex;align-items:center;justify-content:center;}
+.slot-art{height:100%;width:auto;max-width:100%;margin:0;position:relative;}
+.slot-art.wide{width:100%;height:auto;}
+.tag{position:absolute;top:5px;right:5px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:9px;}
+.tag.new{background:var(--accent);color:var(--on-accent);}
+.tag.remove{background:var(--danger);color:var(--on-danger);}
+.tag.custom{background:var(--panel);border:1px solid var(--accent);color:var(--accent);padding:1px 6px;}
+.eye-btn{
+  position:absolute;bottom:5px;right:5px;width:30px;height:30px;padding:0;border-radius:50%;
+  background:rgba(10,10,12,0.72);display:flex;align-items:center;justify-content:center;
+}
+.eye-btn .ico{color:#fff;width:17px;height:17px;}
+.eye-btn:hover{background:rgba(10,10,12,0.9);filter:none;}
+.tag.stock{background:var(--panel);border:1px solid var(--dim);color:var(--muted);padding:1px 6px;}
+.slot-actions{display:flex;gap:8px;justify-content:center;margin-top:10px;}
+.icon-btn{
+  width:36px;height:36px;padding:0;border-radius:8px;background:transparent;border:1px solid var(--accent);
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.icon-btn .ico{color:var(--accent);width:20px;height:20px;}
+.icon-btn.danger{border-color:var(--danger);}
+.icon-btn.danger .ico{color:var(--danger);}
+.icon-btn.danger.active{background:var(--danger);}
+.icon-btn.danger.active .ico{color:var(--on-danger);}
+.icon-btn:disabled{background:transparent;border-color:var(--border);}
+.btn-lbl{font-size:12px;font-weight:600;color:var(--accent);}
+.icon-btn.danger .btn-lbl{color:var(--danger);}
+.icon-btn.danger.active .btn-lbl{color:var(--on-danger);}
+.icon-btn:disabled .btn-lbl{color:var(--dim);}
+@media (min-width:600px){
+  .slot-actions .icon-btn{width:auto;padding:0 12px;gap:6px;}
+  .slot-actions .icon-btn .ico{width:17px;height:17px;}
+}
+@media (max-width:599px){ .btn-lbl{display:none;} }
+.icon-btn:disabled .ico{color:var(--dim);}
+#mismatchNote{text-align:center;margin-top:12px;}
+#slotError{display:block;text-align:center;margin:6px 0 0;}
+
+/* ---- settings dialog ---- */
+.modal.settings-modal{max-width:520px;max-height:min(90vh, 900px);overflow-y:auto;}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.modal-head h3{margin:0;}
+.modal-close{position:static;width:34px;height:34px;}
+.modal-close .ico{width:20px;height:20px;}
+#settingsDlg{z-index:55;}
+
+/* settings sections */
+.set-group{background:var(--inset);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px;}
+.set-group h4{margin:0 0 10px;font-size:12px;font-weight:600;color:var(--text);}
+.set-group .field:last-child,.set-group .hint:last-child{margin-bottom:0;}
+.set-group input,.set-group select{background:var(--bg);}
+.set-save{margin:4px 0 16px;}
+.set-save #saveSettings{flex:1;}
+.set-save .status:empty{display:none;}
+.shape-line{display:grid;grid-template-columns:minmax(0,1fr);row-gap:6px;margin-bottom:8px;font-size:12px;color:var(--muted);}
+.shape-inputs{display:flex;min-width:0;}
+.shape-inputs select{flex:1;width:100%;min-width:0;}
+.shape-custom{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) minmax(0,1fr);gap:8px;}
+.shape-custom.hidden{display:none;}
+.shape-custom input{min-width:0;width:100%;padding-left:8px;padding-right:8px;}
+.shape-custom input.bad{border-color:var(--danger);}
+@media (max-width:420px){
+}
+.set-divider{border:0;border-top:1px solid var(--border);margin:0 0 16px;}
+.set-reboot,.set-reboot:disabled{display:block;width:100%;background:transparent;color:var(--danger);border:1px solid var(--danger);}
+.set-reboot:disabled{opacity:0.75;}
+
+/* ---- discard dialog ---- */
+.modal-backdrop{position:fixed;inset:0;z-index:60;background:rgba(8,9,11,0.75);display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:22px;max-width:380px;width:100%;box-shadow:0 12px 30px var(--shadow);}
+.modal h3{margin:0 0 8px;font-size:16px;}
+.modal p{margin:0 0 18px;line-height:1.5;}
+.modal .modal-warn{color:var(--accent);font-size:13px;margin-top:-8px;}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
+.modal-actions button{min-height:40px;}
+.danger-solid{background:var(--danger);color:var(--on-danger);}
+
+/* ---- large view ---- */
+.lightbox{
+  position:fixed;inset:0;z-index:50;background:rgba(8,9,11,0.88);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:56px 16px 24px;
+}
+.lightbox img{border-radius:6px;background:var(--inset);max-height:72vh;}
+.lb-caption{color:var(--muted);font-size:12px;margin:0;}
+.lb-close{position:absolute;top:14px;right:14px;background:transparent;padding:8px;}
+.lb-close .ico{color:var(--text);width:22px;height:22px;}
+body.lb-open{overflow:hidden;}
+
+/* ---- scroll to top + changes bar ---- */
+.to-top{
+  position:fixed;right:16px;bottom:16px;z-index:20;width:42px;height:42px;border-radius:50%;padding:0;
+  background:var(--panel);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;
+}
+.to-top .ico{color:var(--accent);width:20px;height:20px;}
+body.has-changes .to-top{bottom:88px;}
+body.has-changes{padding-bottom:84px;}
+/* Floats at the page content's width, lifted off the bottom edge */
+.changes-bar{
+  position:fixed;bottom:12px;z-index:20;background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  left:max(20px, calc((100vw - 720px) / 2));right:max(20px, calc((100vw - 720px) / 2));
+  --side:calc(13ch + 34px);font-size:13px;
+  display:grid;grid-template-columns:minmax(var(--side),1fr) minmax(0,auto) minmax(var(--side),1fr);align-items:center;gap:12px;padding:10px 12px;box-shadow:0 8px 24px var(--shadow);
+}
+.changes-bar .bar-save{justify-self:start;}
+.changes-bar .changes-text{grid-column:2;}
+.changes-bar .changes-actions{grid-column:3;justify-self:end;}
+.bar-save{display:flex;align-items:center;gap:10px;}
+#sendBtn{min-width:76px;height:38px;transition:opacity .2s;padding-top:0;padding-bottom:0;line-height:1;}
+#saveSettings{min-width:calc(13ch + 32px);}
+#sendBtn.saved,#sendBtn.saved:disabled,#saveSettings.saved{background:var(--ok);color:var(--on-ok);font-size:16px;}
+.changes-text{min-width:0;line-height:1.3;text-align:center;overflow-wrap:anywhere;}
+.changes-count.saved-text{color:var(--ok);}
+.changes-count{color:var(--accent);font-size:14px;font-weight:600;}
+.changes-sub{color:var(--muted);font-size:11px;}
+.changes-actions{display:flex;align-items:center;gap:10px;}
+
+@media (max-width:599px){
+  .wrap{padding:16px 12px 60px;}
+  .toolbar .seg-btn{padding:0 12px;}
+  .panel-head .tab-btn{padding:6px 9px;}
+  .slot-art-box{height:150px;}
+  .slots-row{gap:10px;}
+  .slot{padding:10px 8px;}
+  .changes-bar{gap:8px;padding:8px 10px;left:12px;right:12px;bottom:10px;--side:calc(13ch + 22px);font-size:12px;}
+  .changes-bar .reboot-btn{min-width:var(--side);padding:0 10px;font-size:12px;height:38px;white-space:nowrap;}
+  .changes-bar #sendBtn{min-width:64px;}
+  .changes-count{font-size:13px;}
+  .panel{padding:16px;}
+  .toolbar{margin:0 -16px 12px;padding:8px 16px;}
+  .game-grid{gap:8px;}
+}
+@media (min-width:600px){
+}
+
+/* SteamGridDB tab without an API key */
+.no-key{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:14px;border:1px dashed var(--border);border-radius:8px;}
+.no-key p{margin:0;color:var(--muted);}
+/* Kind filter: the same lit/unlit indicators as the cards */
+.kind-btn{gap:4px;}
+.kind-btn .ico{width:16px;height:16px;color:var(--dim);}
+.kind-btn .ico.on{color:var(--accent);}
+
+/* Editor header: pencil + tag after the name, Reset to Defaults mirrors Back */
+.name-extras{white-space:nowrap;}
+.pencil-btn{background:transparent;padding:0 0 0 8px;vertical-align:middle;line-height:0;}
+.pencil-btn .ico{color:var(--muted);width:clamp(16px,2.4vw,22px);height:clamp(16px,2.4vw,22px);}
+.pencil-btn:hover .ico{color:var(--accent);}
+.name-tag{display:inline-block;vertical-align:middle;margin-left:8px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9px;line-height:1.4;}
+.name-tag.custom{border:1px solid var(--accent);color:var(--accent);padding:1px 7px;}
+.name-tag.new{background:var(--accent);color:var(--on-accent);}
+.name-tag.remove{background:var(--danger);color:var(--on-danger);}
+.reset-btn{border-color:var(--danger);}
+.reset-btn .ico{color:var(--danger);}
+.reset-btn:hover{border-color:var(--danger);}
+.reset-btn:hover .ico{color:var(--danger);}
+.reset-btn:disabled{background:transparent;border-color:var(--border);cursor:not-allowed;}
+.reset-btn:disabled .ico{color:var(--dim);}
+.ed-head{flex-wrap:nowrap;}
+
+/* Edit Details popup */
+.modal.details-modal{max-width:460px;}
+.details-modal .field{margin-bottom:12px;}
+.details-modal input.bad{border-color:var(--danger);}
+.byte-count{font-size:11px;color:var(--muted);}
+.byte-count.over{color:var(--danger);}
+.full-btn{display:block;width:100%;margin:6px 0 16px;}
+#detailsResetWrap.hidden{display:none;}
+.confirm-list{margin:-10px 0 14px;padding-left:20px;line-height:1.7;font-size:14px;}
+#sendBtn:disabled:not(.saved){opacity:0.45;}
+/* Very narrow phones: no room between the buttons, so the text sits above them */
+@media (max-width:359px){
+  .changes-bar{grid-template-columns:1fr 1fr;row-gap:6px;}
+  .changes-bar .changes-text{grid-column:1 / -1;grid-row:1;}
+  .changes-bar .bar-save{grid-column:1;grid-row:2;}
+  .changes-bar .changes-actions{grid-column:2;grid-row:2;}
+  body.has-changes{padding-bottom:124px;}
+  body.has-changes .to-top{bottom:128px;}
+}
+
+/* Header buttons: About (?) next to Settings */
+.head-btns{display:flex;gap:8px;align-items:stretch;}
+.round-btn{padding:0;width:32px;height:32px;border-radius:50%;align-self:center;display:inline-flex;align-items:center;justify-content:center;}
+.round-btn .ico{width:18px;height:18px;color:inherit;}
+.about-btn{font-size:15px;font-weight:700;}
+.about-divider{margin:2px 0 14px;}
+.modal.about-modal{max-width:520px;}
+.about-modal p{margin:0 0 12px;line-height:1.6;font-size:13px;}
+.about-modal .about-name{font-weight:600;font-size:14px;}
+.about-modal h4{margin:0 0 6px;}
+.about-modal a{color:var(--accent);}
+.credits{margin:0;padding-left:18px;line-height:1.8;font-size:13px;}
+.kind-toggle .ico{color:var(--dim);}
+.kind-toggle.active .ico{color:var(--accent);}
+#kindFilter .seg-btn{padding-left:0;padding-right:0;}
+.kind-row{display:flex;gap:8px;flex:1;min-width:0;}
+.kind-row .seg{flex:1;}
+
+/* List heading: the view switch (which icon the cards show) lives here, apart from search and filters */
+.list-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
+.list-head h2{margin:0;white-space:nowrap;}
+.list-head .short{display:none;}
+.list-head .seg{flex:none;}
+.toolbar .list-head .seg-btn{padding:0 10px;min-height:34px;font-size:12px;gap:6px;}
+@media (max-width:430px){
+  .list-head .long{display:none;}
+  .list-head .short{display:inline;}
+  .toolbar .list-head .seg-btn{padding:0 8px;font-size:11px;}
+}
+@media (max-width:359px){
+  .list-head h2{display:none;}
+  .list-head .seg{flex:1;display:flex;}
+  .list-head .seg-btn{flex:1;justify-content:center;}
+}
+/* Save and Reboot Switch are the same width, for symmetry */
+.changes-bar #sendBtn,.changes-bar .reboot-btn{width:var(--side);min-width:0;font-size:13px;}
+@media (max-width:600px){ .changes-bar #sendBtn,.changes-bar .reboot-btn{font-size:12px;} }
+.changes-count.ready-text{color:var(--muted);font-weight:400;}
+/* The bar's button widths are in "ch", so the tick must keep the same font size or Save grows */
+.changes-bar #sendBtn.saved{font-size:13px;}
+@media (max-width:600px){ .changes-bar #sendBtn.saved{font-size:12px;} }
+
+/* ---- Switch-style design ----
+   The Switch's own system look: Basic Black (charcoal, all mint) and
+   Basic White (soft grey, blue values, cyan selection frame). Flat surfaces,
+   tiles with a pulsing selection frame, round icon buttons, soft dividers.
+   Look only: no Nintendo logos, icons or fonts. Applies via <html class="sw">. */
+
+/* The Switch's own System Settings look:
+   Basic Black = charcoal with mint values; Basic White = soft grey with blue values.
+   The selection frame is its own cyan in both. */
+html.sw{
+  --bg:#2d2d2d;--panel:#2d2d2d;--inset:#3a3a3a;--border:#4a4a4a;--text:#ffffff;--muted:#a8a8a8;--dim:#6e6e6e;
+  --accent:#00ffc7;--accent-dim:rgba(0,255,199,0.10);--danger:#ff5a4e;--ok:#00ffc7;
+  --on-accent:#04281f;--art-bg:#3a3a3a;--secondary:#464646;--shadow:rgba(0,0,0,0.45);
+  --sw-line:#5a5a5a;--sw-chip:#464646;--sw-chip-text:#ffffff;
+  --sw-frame:#00ffc7;--sw-sel-bg:#3a3a3a;
+  color-scheme:dark;
+}
+html.sw[data-theme="light"]{
+  --bg:#ebebeb;--panel:#ebebeb;--inset:#f4f4f4;--border:#d6d6d6;--text:#2d2d2d;--muted:#6f6f6f;--dim:#b0b0b0;
+  --accent:#3245f0;--accent-dim:rgba(50,69,240,0.08);--ok:#2f9e5b;--art-bg:#dcdcdc;--secondary:#ffffff;--shadow:rgba(0,0,0,0.12);
+  --sw-line:#9a9a9a;--sw-chip:#ffffff;--sw-chip-text:#2d2d2d;
+  --sw-frame:#5ad3e6;--sw-sel-bg:#ffffff;--on-accent:#ffffff;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: light){
+  html.sw:not([data-theme]){
+    --bg:#ebebeb;--panel:#ebebeb;--inset:#f4f4f4;--border:#d6d6d6;--text:#2d2d2d;--muted:#6f6f6f;--dim:#b0b0b0;
+    --accent:#3245f0;--accent-dim:rgba(50,69,240,0.08);--ok:#2f9e5b;--art-bg:#dcdcdc;--secondary:#ffffff;--shadow:rgba(0,0,0,0.12);
+    --sw-line:#9a9a9a;--sw-chip:#ffffff;--sw-chip-text:#2d2d2d;
+    --sw-frame:#5ad3e6;--sw-sel-bg:#ffffff;--on-accent:#ffffff;
+    color-scheme:light;
+  }
+}
+
+/* Clean sans type instead of monospace */
+html.sw body, html.sw button, html.sw input, html.sw select{
+  font-family:"Segoe UI","Helvetica Neue",Roboto,Arial,sans-serif;letter-spacing:0.01em;
+}
+html.sw .tid, html.sw .ver, html.sw .ed-sub{font-family:inherit;}
+
+/* Header: like the hekate/Home top bar, with a thin divider */
+html.sw header{border-bottom:1px solid var(--sw-line);padding-bottom:14px;margin-bottom:18px;}
+html.sw .brand h1{font-weight:500;font-size:22px;letter-spacing:0.02em;}
+
+/* Round icon buttons like the Home menu's bottom row */
+html.sw .round-btn{width:40px;height:40px;background:var(--sw-chip);border:none;color:var(--sw-chip-text);box-shadow:0 2px 6px var(--shadow);}
+html.sw .round-btn .ico{width:20px;height:20px;}
+html.sw .round-btn:hover, html.sw .round-btn:focus-visible{box-shadow:0 0 0 3px var(--sw-frame);color:var(--text);}
+html.sw .about-btn{font-size:18px;}
+
+/* Panels disappear: content sits straight on the background */
+html.sw .panel{background:transparent;border:none;padding:0;}
+/* Pinned header reaches 12px past the content so the thick selection frame
+   (which sticks out 6px) never shows beside it */
+html.sw .toolbar{background:var(--bg);margin:0 -12px 14px;padding:10px 12px;}
+html.sw .toolbar.pinned{border-bottom:1px solid var(--sw-line);box-shadow:none;}
+html.sw .list-head h2{font-weight:500;font-size:18px;color:var(--text);}
+
+/* Inputs and buttons: soft rounded rectangles */
+html.sw input, html.sw select{background:var(--inset);border:1px solid transparent;border-radius:10px;}
+html.sw input:focus, html.sw select:focus{border-color:var(--sw-frame);box-shadow:none;}
+html.sw button{border-radius:10px;font-weight:500;}
+html.sw .ghost-btn, html.sw .back-btn, html.sw .tab-btn, html.sw .danger-btn{border-radius:10px;}
+html.sw #refresh{border-radius:50%;background:var(--sw-chip);border:none;}
+
+/* Segmented controls: one rounded track, selected item gets the cyan frame */
+html.sw .seg{border:none;background:var(--inset);border-radius:12px;padding:3px;gap:3px;}
+html.sw .seg-btn{border-radius:9px;background:transparent;color:var(--muted);}
+html.sw .seg-btn + .seg-btn{border-left:none;}
+html.sw .seg-btn.active{background:var(--sw-sel-bg);color:var(--accent);box-shadow:inset 0 0 0 2px var(--sw-frame);}
+html.sw .tab-btn.active{background:var(--sw-sel-bg);box-shadow:inset 0 0 0 2px var(--sw-frame);border-color:transparent;}
+
+/* Game tiles: borderless squares; selection is the pulsing cyan frame */
+html.sw button.game{background:transparent;border:none;padding:0;gap:6px;border-radius:4px;}
+html.sw button.game .art{border-radius:3px;margin-bottom:2px;transition:box-shadow .15s;}
+html.sw button.game:hover .art, html.sw button.game:focus-visible .art{
+  box-shadow:0 0 0 2px var(--bg),0 0 0 6px var(--sw-frame);animation:sw-pulse 1.2s ease-in-out infinite;
+}
+html.sw button.game:focus-visible{outline:none;}
+html.sw button.game:hover .name, html.sw button.game:focus-visible .name{color:var(--accent);}
+@keyframes sw-pulse{50%{box-shadow:0 0 0 2px var(--bg),0 0 0 6px color-mix(in srgb,var(--sw-frame) 45%,transparent);}}
+html.sw .game .name{font-size:13px;font-weight:500;}
+html.sw .game-grid{gap:18px 14px;}
+html.sw .pill{border-radius:999px;font-family:inherit;}
+
+/* Editor slots: flat tiles, picked slot framed in cyan */
+html.sw .slot{background:var(--inset);border:none;border-radius:12px;}
+html.sw .slot.targeted{box-shadow:inset 0 0 0 3px var(--sw-frame);background:var(--sw-sel-bg);}
+html.sw .icon-grid img{border-radius:4px;}
+html.sw .icon-grid .thumb.picked img{border-color:var(--sw-frame);box-shadow:0 0 0 3px var(--sw-frame);}
+html.sw .ed-name{font-weight:500;}
+
+/* Popups: rounded sheets, no border */
+html.sw .modal{background:var(--inset);border:none;border-radius:16px;}
+html.sw[data-theme="light"] .modal{background:#ffffff;}
+
+/* Footer: full width on the bottom edge with a divider, like the Home menu */
+html.sw .changes-bar{
+  left:0;right:0;bottom:0;border:none;border-top:1px solid var(--sw-line);border-radius:0;box-shadow:none;
+  background:var(--bg);padding:10px max(16px, calc((100vw - 720px) / 2));
+}
+html.sw #sendBtn, html.sw .changes-bar .reboot-btn{
+  background:transparent;border:none;color:var(--text);display:inline-flex;align-items:center;justify-content:center;gap:8px;
+}
+html.sw #sendBtn:disabled:not(.saved){opacity:0.35;}
+html.sw #sendBtn.saved{background:transparent;color:var(--ok);}
+html.sw .changes-bar .reboot-btn{color:var(--danger);}
+html.sw .changes-count{color:var(--accent);}
+html.sw body.has-changes{padding-bottom:76px;}
+html.sw #sendBtn, html.sw .changes-bar .reboot-btn{white-space:nowrap;width:auto;min-width:var(--side);padding:0 6px;}
+
+
+/* Game cards: raised tiles; the selection frame goes round the whole card */
+html.sw button.game{background:var(--inset);padding:8px;border-radius:8px;transition:box-shadow .15s;}
+html.sw button.game:hover .art, html.sw button.game:focus-visible .art{box-shadow:none;animation:none;}
+html.sw button.game:hover, html.sw button.game:focus-visible{
+  box-shadow:0 0 0 2px var(--bg),0 0 0 6px var(--sw-frame);animation:sw-pulse 1.2s ease-in-out infinite;background:var(--sw-sel-bg);
+}
+
+
+/* App badge: the logo cut out of an accent square, with "NX" in the accent */
+.brand .sw-logo{display:none;}
+html.sw .brand .sw-logo{display:block;flex:none;width:40px;height:40px;padding:6px;border-radius:12px;background:var(--accent);color:var(--bg);box-sizing:border-box;}
+html.sw .brand .nx{color:var(--accent);}
+html.sw .brand h1{font-size:24px;font-weight:700;letter-spacing:0;}
+html.sw .brand{gap:14px;}
+
+/* ---- Art picker (SteamGridDB results): same sizing as the game grid, Switch highlight ---- */
+html.sw .icon-grid, html.sw .icon-grid.wide-thumbs{grid-template-columns:repeat(auto-fill,minmax(147px,1fr));gap:16px 14px;}
+html.sw .icon-grid img{border:none;border-radius:3px;transition:box-shadow .15s;}
+html.sw .icon-grid img:hover{box-shadow:0 0 0 2px var(--bg),0 0 0 6px var(--sw-frame);animation:sw-pulse 1.2s ease-in-out infinite;}
+html.sw .icon-grid .thumb.picked img{box-shadow:0 0 0 2px var(--bg),0 0 0 6px var(--sw-frame);animation:none;}
+
+/* Rounded art, matching the selection frame's corners */
+html.sw button.game .art,
+html.sw .icon-grid img,
+html.sw .slot .art{border-radius:8px;}
+html.sw .art img{border-radius:inherit;}
+
+/* Popup fields: a shade apart from the popup so the boxes show in both themes */
+html.sw{--sw-field:#262626;}
+html.sw[data-theme="light"]{--sw-field:#efefef;}
+@media (prefers-color-scheme: light){ html.sw:not([data-theme]){--sw-field:#efefef;} }
+html.sw .modal input, html.sw .modal select{background:var(--sw-field);}
+
+/* Dividers: softer and inset from the edges, like the Home menu's lines,
+   with a gentle fade under the pinned header instead of a hard edge */
+html.sw{--sw-line:#4a4a4a;}
+html.sw[data-theme="light"]{--sw-line:#cfcfcf;}
+@media (prefers-color-scheme: light){ html.sw:not([data-theme]){--sw-line:#cfcfcf;} }
+html.sw .toolbar.pinned{border-bottom:none;box-shadow:none;}
+html.sw .toolbar.pinned::after{
+  content:"";position:absolute;left:12px;right:12px;bottom:0;height:1px;background:var(--sw-line);
+}
+html.sw .toolbar.pinned::before{
+  content:"";position:absolute;left:0;right:0;top:100%;height:12px;pointer-events:none;
+  background:linear-gradient(var(--bg),transparent);
+}
+html.sw .changes-bar{border-top:none;}
+html.sw .changes-bar::before{
+  content:"";position:absolute;top:0;height:1px;background:var(--sw-line);
+  left:max(16px, calc((100vw - 720px) / 2));right:max(16px, calc((100vw - 720px) / 2));
+}
+html.sw .changes-bar::after{
+  content:"";position:absolute;left:0;right:0;bottom:100%;height:12px;pointer-events:none;
+  background:linear-gradient(transparent,var(--bg));
+}
+
+/* Footer buttons: outlined like the Settings reboot button, bold, same size.
+   Save is mint/blue once there's something to save. */
+html.sw #sendBtn, html.sw .changes-bar .reboot-btn{
+  height:38px;border-radius:10px;font-weight:700;font-size:13px;padding:0 10px;justify-content:center;
+}
+html.sw #sendBtn{border:1px solid var(--accent);color:var(--accent);background:transparent;}
+html.sw #sendBtn:disabled:not(.saved){border-color:var(--sw-line);color:var(--muted);opacity:1;}
+html.sw #sendBtn.saved, html.sw #sendBtn.saved:disabled{border-color:var(--ok);background:var(--ok);color:var(--on-accent);}
+html.sw .changes-bar .reboot-btn{border:1px solid var(--danger);color:var(--danger);background:transparent;}
+html.sw .changes-count{font-weight:700;}
+
+/* Confirmation popups: Switch-style system dialog. Centred message, then a
+   divider and two flat buttons split by a line across the bottom. */
+html.sw #confirmDlg .modal{padding:26px 0 0;max-width:420px;text-align:center;overflow:hidden;}
+html.sw #confirmDlg .modal > :not(.modal-actions){margin-left:24px;margin-right:24px;}
+html.sw #confirmDlg h3{font-size:18px;font-weight:600;margin-bottom:12px;}
+html.sw #confirmDlg .confirm-list{text-align:left;display:inline-block;margin:-4px auto 14px;}
+html.sw #confirmDlg .modal-warn{margin-top:0;}
+html.sw #confirmDlg .modal-actions{
+  margin-top:20px;gap:0;flex-wrap:nowrap;border-top:1px solid var(--sw-line);
+}
+html.sw #confirmDlg .modal-actions button{
+  flex:1;min-height:56px;border:none;border-radius:0;background:transparent;font-size:15px;font-weight:600;
+}
+html.sw #confirmDlg #confirmNo{color:var(--text);border-right:1px solid var(--sw-line);}
+html.sw #confirmDlg #confirmYes{color:var(--danger);}
+html.sw #confirmDlg .modal-actions button:hover, html.sw #confirmDlg .modal-actions button:focus-visible{
+  background:var(--sw-sel-bg);box-shadow:inset 0 0 0 3px var(--sw-frame);outline:none;
+}
+/* Footer buttons keep one fixed width, whatever they show (Save, the tick, Rebooting...) */
+html.sw #sendBtn, html.sw .changes-bar .reboot-btn{width:var(--side);min-width:var(--side);max-width:var(--side);overflow:hidden;}
+/* Dialog buttons: round only the outer bottom corners, matching the popup, so the frame isn't clipped */
+html.sw #confirmDlg .modal-actions #confirmNo{border-radius:0 0 0 16px;}
+html.sw #confirmDlg .modal-actions #confirmYes{border-radius:0 0 16px 0;}
+/* Save keeps exactly the same size when it shows the tick */
+html.sw #sendBtn, html.sw .changes-bar .reboot-btn{width:var(--side);min-width:var(--side);max-width:var(--side);}
+html.sw #sendBtn.saved{line-height:1;}
+/* Dialog buttons: round only the outer bottom corners so the frame isn't cut off,
+   and pulse the frame like the cards */
+html.sw #confirmDlg #confirmNo{border-bottom-left-radius:16px;}
+html.sw #confirmDlg #confirmYes{border-bottom-right-radius:16px;}
+html.sw #confirmDlg .modal-actions button:hover, html.sw #confirmDlg .modal-actions button:focus-visible{
+  animation:sw-pulse-in 1.2s ease-in-out infinite;
+}
+@keyframes sw-pulse-in{
+  0%,100%{box-shadow:inset 0 0 0 3px var(--sw-frame);}
+  50%{box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--sw-frame) 45%,transparent);}
+}
+html.sw .changes-bar #sendBtn.saved{font-size:13px;}
+html.sw #sendBtn.saved, html.sw #sendBtn.saved:disabled{border-color:var(--accent);background:var(--accent);color:var(--on-accent);}
